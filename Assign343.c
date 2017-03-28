@@ -8,11 +8,11 @@
 /* 
 Turns the robot by activating a servo motor and stopping the opposite motor
 
-m = which motor we use to turn the robot
+@param m = which motor we use to turn the robot
     0 = right motor
     1 = left motor
-rotations = how many 90 degree turns to do
-speed = the speed to set the chosen servo motor to.
+@param rotations = how many 90 degree turns to do
+@param speed = the speed to set the chosen servo motor to.
 */
 void turn(int m, int rotations, int speed) {
 	motor[mL] = 0;
@@ -28,7 +28,7 @@ void turn(int m, int rotations, int speed) {
 /*
 Sets the speed of both motors
 
-speed = rate the motors work at (0 to 100)
+@param speed = rate the motors work at (0 to 100)
 */
 void setSpeed(int speed) {
   motor[mL] = speed;
@@ -82,6 +82,9 @@ task main() {
 }
 /*
 task main() {
+	// colour ranges
+	// black tile: <= to 14
+	
 	wait1Msec(500);
 	int count = 0;
 	int white = 0; //flag to check we have moved off black
