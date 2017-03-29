@@ -48,15 +48,26 @@ void setSpeed(int speed) {
   motor[mL] = speed;
   motor[mR] = speed;
 }
+
+void drive(int num) {
+		int current = getMotorEncoder(mL);
+		// 200 is approximately one wheel rotation
+		while(getMotorEncoder(mL) <= current + (200 * num)) {
+			setSpeed(20);
+		}
+		setSpeed(0);
+}
+
 /*
 Used to find the closest structure and face the robot towards it
 */
 void findTower() {
-  float min = 999;
+  float min = 255;
+
   // set current to the value of the Motor Encoder
   int current = getMotorEncoder(mL);
   // do a 360 degree turn
-  while (getMotorEncoder(mL) <= current + (300 * 2)) {
+  while (getMotorEncoder(mL) <= current + 690) {
       motor[mL] = 20;
       motor[mR] = -20;
       // while turning, find the closest structure and record the distance to it
@@ -64,28 +75,39 @@ void findTower() {
         min = getUSDistance(sonar);
       }
    }
+
+   if (min > 100) {
+     	drive(5);
+   		findTower();
+   		return;
+   }
+
    // spin the robot to where the sonar recored the closest object
-   int prespin = getMotorEncoder(mL);
-   while ((getUSDistance(sonar) > (min + 1)) || getMotorEncoder(mL) <= prespin + (300 * 2)) {
+   current = getMotorEncoder(mL);
+   while ((getUSDistance(sonar) > (min + 1)) && getMotorEncoder(mL) <= current + 700) {
        motor[mL] = 20;
        motor[mR] = -20;
    }
    // we are now facing the closest object so stop both motors
    setSpeed(0);
 }
+/*
+void approachTower() {
+
+}*/
+
+/*void spin(int num) {
+	int current = getMotorEncoder(mL);
+	while (getMotorEncoder(mL) <= current + (700 * num)) {
+		motor[mL] = 20;
+		motor[mR] = -20;
+	}
+}*/
 
 void pushTower() {
 	bool pushedOff = false;
-	int currentBefore = getMotorEncoder(mL);
 	while(pushedOff == false) {
 		setSpeed(30);
-
-		// If we drive for too long, refind tower
-		if (getMotorEncoder(mL) > (currentBefore + (3 * 350))) {
-			currentBefore = getMotorEncoder(mL);
-			//setSpeed(0);
-			findTower();
-		}
 
 		if ((getUSDistance(sonar) < 7) && isBlack()) {
 			while((isBlack()) && (pushedOff == false)) {
@@ -99,7 +121,6 @@ void pushTower() {
 }
 	playSound(soundUpwardTones);
 	setSpeed(0);
-
 }
 
 
@@ -110,7 +131,9 @@ task main() {
         waitUntilMotorStop(mL);
         waitUntilMotorStop(mR);
         findTower();
-        pushTower();
+        //pushTower();
+
+
 }
 /*
 task main() {
