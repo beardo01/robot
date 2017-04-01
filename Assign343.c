@@ -138,7 +138,7 @@ void driveRow() {
 	setSpeed(20);
 
 	// Drive and count black tiles until we have counted 15.
-	while(count <= 15) {
+	while(count < 15) {
 
 		// Detect a light tile and set light flag.
 		if (getColorReflected(lightSensor) >= LIGHT_TILE) {
@@ -217,8 +217,6 @@ void approachTower() {
 	while(getUSDistance(sonar) > 10) {
 		setSpeed(20);
 	}
-
-	findTower();
 }
 
 /*
@@ -258,5 +256,5 @@ task main() {
 	// Approach the tower, and get ready to push it.
 	approachTower();
 	// Push the tower off of the black block, then stop.
-	pushTower(); 
+	pushTower();
 }
