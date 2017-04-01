@@ -94,6 +94,28 @@ void drive(int num, int speed) {
 }
 
 /*
+Drives the remaining distance to the tower, pushes it off the black and then
+drives a set distance.
+*/
+void pushTower() {
+	bool pushedOff = false;
+	while(pushedOff == false) {
+		// Drive towards the tower
+		setSpeed(30);
+
+		// Detect that we are close and speed up for a certain amount of time
+		if ((getUSDistance(sonar) < 7) && isBlack()) {
+			while((isBlack()) && (pushedOff == false)) {
+				drive(2, 40);
+				pushedOff = true;
+			}
+		}
+	}
+	playSound(soundUpwardTones);
+	setSpeed(0);
+}
+
+/*
 Starts on the black starting square, drives forward then detects and turn on
 the first black tile.
 */
@@ -214,34 +236,7 @@ void findTower() {
 Close the final gap towards the tower.
 */
 void approachTower() {
-	while(getUSDistance(sonar) > 10) {
-		setSpeed(20);
-	}
-
-	findTower();
-}
-
-/*
-Drives the remaining distance to the tower, pushes it off the black and then
-drives a set distance.
-*/
-void pushTower() {
-	bool pushedOff = false;
-	while(pushedOff == false) {
-		// Drive towards the tower
-		setSpeed(20);
-
-		// Detect that we are close and speed up for a certain amount of time
-		if ((getUSDistance(sonar) < 7) && isBlack()) {
-			while((isBlack()) && (pushedOff == false)) {
-				drive(2, 40);
-				pushedOff = true;
-			}
-		}
-	}
-
-	playSound(soundUpwardTones);
-	setSpeed(0);
+	
 }
 
 task main() {
@@ -260,3 +255,47 @@ task main() {
 	// Push the tower off of the black block, then stop.
 	pushTower(); 
 }
+
+/*task main() {
+
+        moveMotorTarget(mL, 4500, 100);
+        moveMotorTarget(mR, 4500, 100);
+        waitUntilMotorStop(mL);
+        waitUntilMotorStop(mR);
+        findTower();
+        //pushTower();
+
+
+}*/
+/*
+task main() {
+	// colour ranges
+	// black tile: <= to 14
+
+	wait1Msec(500);
+	int count = 0;
+	int white = 0; //flag to check we have moved off black
+	bool phase1 = true;
+
+	while(phase1) {
+
+			// black squares
+			if (getColorReflected(lightSensor) <= 14 && count <= 15 && white == 1) {
+				playSound(soundBlip);
+				count++;
+				white = 0;
+			}
+
+			if (count == 15) {
+        turn(1, 1, 20);
+        moveMotorTarget(mL, 4500, 40);
+        moveMotorTarget(mR, 4500, 40);
+        waitUntilMotorStop(mL);
+        waitUntilMotorStop(mR);
+        phase1 = false;
+        findTower();
+		}
+	}
+		//setSpeed(0);
+    //playSound(soundException);
+}*/
