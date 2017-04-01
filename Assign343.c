@@ -79,6 +79,24 @@ void drive(float num, int speed) {
 }
 
 /*
+Spins the robot, on the point, in a certain direction at a certain speed.
+
+@param speed The speed at which to turn the robot.
+@param dir The direction to spin the robot.
+	0 = clockwise
+	1 = counter clockwise
+*/
+void spin(int speed, int dir) {
+	if(dir) {
+		motor[mL] = speed;
+		motor[mR] = speed - (speed * 2);
+	} else {
+		motor[mL] = speed - (speed * 2);
+		motor[mR] = speed;
+	}
+}
+
+/*
 Starts on the black starting square, drives forward then detects and turn on
 the first black tile.
 */
@@ -201,6 +219,54 @@ void moveCloser() {
 	}
  	// We are now facing the closest object so stop both motors
  	setSpeed(0);
+}
+
+/*
+Find tower alternative.
+*/
+void findTowerOne() {
+	float min = 100;
+
+	// Get the current encoder
+	int current = getMotorEncoder(mL);
+	int count = 0;
+	int turn_count = 0;
+
+	// Do a full 360 spin
+	while(getMotorEncoder(mL) <= current + SPIN) {
+		
+		// Spin and hold
+		turn(20, 0);
+		wait1Msec(500);
+		setSpeed(0);
+
+		// Check to see if we now have a new smaller rotation
+		if(getUSDistance(sonar) < min) {
+			min = getUSDistance(sonar);
+			turn_count = count;
+		}
+
+		// Increment the counter so we know how far to turn
+		count++;
+	}
+
+	// Check to see if we got an acceptable min
+	if(min < 80) {
+		drive(2, 20);
+		findTowerOne();
+		return;
+	}
+
+	// Turn back to our min sonar range
+	count = 0;
+	while (count <= turn_count) {
+		// Do same spinning and holding
+		turn(20, 0);
+		wait1Msec(500);
+		setSpeed(0);
+
+		count++;
+	}
 }
 
 /*
