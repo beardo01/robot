@@ -21,6 +21,7 @@ the assignment.
 #define SPIN 690
 #define QUARTER_TURN 350
 #define WHEEL_ROTATION 200
+#define SQUARE_ADJUST 75
 
 /*
 Checks if the sensor currently senses black or not.
@@ -131,9 +132,6 @@ void driveRow() {
 	int count = 1;
 	int lightTile = 0;
 
-	// Do our auto correction
-	// comingSoon();
-
 	// Start driving
 	setSpeed(20);
 
@@ -152,6 +150,26 @@ void driveRow() {
 
 			// Reset our lightTile flag.
 			lightTile = 0;
+
+			//Error Corretion
+			if(count %2 == 1){
+				
+				//wait untill we hit an edge
+				while(isBlack()){
+					motor[mL] = 5;
+					motor[mR] = -5;
+				}
+				setSpeed(0);
+
+				//After hiting the edge turn the robot until we are in the centre of a square
+				int current = getMotorEncoder(mR);
+				while(getMotorEncoder(mR) <= current + SQUARE_ADJUST) {
+					motor[mR] = 5;
+					motor[mL] = -5;
+				}
+
+				setSpeed(20);
+			}
 		}
 	}
 
@@ -168,8 +186,8 @@ void moveCloser() {
 	turn(1, 1, 20);
 
 	// Drive towards the tower
-	moveMotorTarget(mL, 4500, 40);
-	moveMotorTarget(mR, 4500, 40);
+	moveMotorTarget(mL, 4250, 40);
+	moveMotorTarget(mR, 4250, 40);
 	waitUntilMotorStop(mL);
 	waitUntilMotorStop(mR);
 }
@@ -211,15 +229,6 @@ void findTower() {
 }
 
 /*
-Close the final gap towards the tower.
-*/
-void approachTower() {
-	while(getUSDistance(sonar) > 10) {
-		setSpeed(20);
-	}
-}
-
-/*
 Drives the remaining distance to the tower, pushes it off the black and then
 drives a set distance.
 */
@@ -253,8 +262,6 @@ task main() {
 	moveCloser();
 	// Find the tower and face it.
 	findTower();
-	// Approach the tower, and get ready to push it.
-	approachTower();
 	// Push the tower off of the black block, then stop.
 	pushTower();
 }
