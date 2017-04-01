@@ -21,7 +21,8 @@ the assignment.
 #define SPIN 690
 #define QUARTER_TURN 350
 #define WHEEL_ROTATION 200
-#define SQUARE_ADJUST 75
+#define SQUARE_CENTRE 200
+#define SQUARE_BIAS 0.75
 
 /*
 Checks if the sensor currently senses black or not.
@@ -86,7 +87,7 @@ Drives the robot forward a set number of full wheel rotations.
 @param num The number of wheel rotations to drive.
 @param speed The speed to drive at.
 */
-void drive(int num, int speed) {
+void drive(float num, int speed) {
 	int current = getMotorEncoder(mL);
 	while(getMotorEncoder(mL) <= current + (WHEEL_ROTATION * num)) {
 		setSpeed(speed);
@@ -151,25 +152,24 @@ void driveRow() {
 			// Reset our lightTile flag.
 			lightTile = 0;
 
-			//Error Corretion
-			if(count %2 == 1){
-				
+				drive(0.4, 10);
+				int distance = getMotorEncoder(mL);
 				//wait untill we hit an edge
 				while(isBlack()){
-					motor[mL] = 5;
-					motor[mR] = -5;
+					motor[mL] = 10;
+					//motor[mR] = -5;
 				}
 				setSpeed(0);
 
 				//After hiting the edge turn the robot until we are in the centre of a square
-				int current = getMotorEncoder(mR);
-				while(getMotorEncoder(mR) <= current + SQUARE_ADJUST) {
-					motor[mR] = 5;
-					motor[mL] = -5;
+				int current = getMotorEncoder(mL);
+				distance = current - distance;
+				while(getMotorEncoder(mL) >= current - ( distance * SQUARE_BIAS + SQUARE_CENTRE*(1-SQUARE_BIAS))) {
+					//motor[mR] = 10;
+					motor[mL] = -10;
 				}
 
 				setSpeed(20);
-			}
 		}
 	}
 
@@ -212,6 +212,7 @@ void findTower() {
 
 	// Check to see if we found the tower, or if we need to drive and retry.
 	if (min > 100) {
+		setLEDColor(ledRedFlash);
 		drive(5, 30);
 		findTower();
 		return;
@@ -240,15 +241,14 @@ void pushTower() {
 
 		// Detect that we are close and speed up for a certain amount of time
 		if ((getUSDistance(sonar) < 7) && isBlack()) {
-			while((isBlack()) && (pushedOff == false)) {
 				drive(2, 40);
 				pushedOff = true;
-			}
 		}
 	}
 
 	playSound(soundUpwardTones);
 	setSpeed(0);
+	wait1Msec(1000);
 }
 
 task main() {
@@ -264,4 +264,5 @@ task main() {
 	findTower();
 	// Push the tower off of the black block, then stop.
 	pushTower();
+
 }
