@@ -163,8 +163,21 @@ void pushTower() {
 	setSpeed(0);
 }
 
-task main() {
+void findRow() {
 	
+}
+
+task main() {
+	// Drive from the start block, onto the row of tiles, then turn right.
+	findRow();
+	// Drive along the row of tiles, use pathing and count to 15.
+	driveRow();
+	// Make a right turn, drive towards the tower, find it and face it.
+	faceTower();
+	// Approach the tower, and get ready to push it.
+	approachTower();
+	// Push the tower off of the black block, then stop.
+	pushTower(); 
 }
 
 /*task main() {
