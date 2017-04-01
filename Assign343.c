@@ -21,8 +21,9 @@ the assignment.
 #define SPIN 690
 #define QUARTER_TURN 350
 #define WHEEL_ROTATION 200
-#define SQUARE_CENTRE 200
+#define SQUARE_CENTRE 180 // wheel rotation from center of tile to edge of tile
 #define SQUARE_BIAS 0.75
+#define MIN_RANGE 1.3
 
 /*
 Checks if the sensor currently senses black or not.
@@ -31,24 +32,6 @@ Checks if the sensor currently senses black or not.
 */
 bool isBlack() {
 	return (getColorReflected(lightSensor) <= BLACK_UPPER);
-}
-
-/*
-Checks if the sensor currently senses white or not.
-
-@return true if the light reflected is greater than or equal to 52, otherwise false.
-*/
-bool isWhite() {
-	return (getColorReflected(lightSensor) >= WHITE_LOWER);
-}
-
-/*
-Checks if the sensor currently senses grey or not.
-
-@return true if the light reflected is between 30 and 52, otherwise false.
-*/
-bool isGrey() {
-	return (getColorReflected(lightSensor) > GREY_LOWER && getColorReflected(lightSensor) < GREY_UPPER);
 }
 
 /*
@@ -134,7 +117,7 @@ void driveRow() {
 	int lightTile = 0;
 
 	// Start driving
-	setSpeed(20);
+	setSpeed(40);
 
 	// Drive and count black tiles until we have counted 15.
 	while(count < 15) {
@@ -151,28 +134,23 @@ void driveRow() {
 
 			// Reset our lightTile flag.
 			lightTile = 0;
+			drive(0.4, 20);
+			int distance = getMotorEncoder(mL);
+			//wait untill we hit an edge
+			while(isBlack()){
+				motor[mL] = 20;
+			}
+			setSpeed(0);
 
-				drive(0.4, 10);
-				int distance = getMotorEncoder(mL);
-				//wait untill we hit an edge
-				while(isBlack()){
-					motor[mL] = 10;
-					//motor[mR] = -5;
-				}
-				setSpeed(0);
-
-				//After hiting the edge turn the robot until we are in the centre of a square
-				int current = getMotorEncoder(mL);
-				distance = current - distance;
-				while(getMotorEncoder(mL) >= current - ( distance * SQUARE_BIAS + SQUARE_CENTRE*(1-SQUARE_BIAS))) {
-					//motor[mR] = 10;
-					motor[mL] = -10;
-				}
-
-				setSpeed(20);
+			//After hiting the edge turn the robot until we are in the centre of a square
+			int current = getMotorEncoder(mL);
+			distance = current - distance;
+			while(getMotorEncoder(mL) >= current - ( distance * SQUARE_BIAS + SQUARE_CENTRE*(1-SQUARE_BIAS))) {
+				motor[mL] = -20;
+			}
+			setSpeed(40);
 		}
 	}
-
 	// Stop driving
 	setSpeed(0);
 
@@ -193,8 +171,80 @@ void moveCloser() {
 }
 
 /*
-Finds the closest object through it, using sonar and faces towards it.
+ Finds the closest object through it, using sonar and faces towards it.
 */
+ void findTower() {
+ 	float min = 255;
+	int min_rotation = 0;
+ 	// Set current to the value of the Motor Encoder
+ 	int current = getMotorEncoder(mL);
+ 	// Do a 360 degree turn
+ 	while (getMotorEncoder(mL) <= current + SPIN) {
+ 		motor[mL] = 10;
+ 		motor[mR] = -10;
+ 		// While turning, find the closest thing and record the distance to it
+ 		if (getUSDistance(sonar) < min) {
+ 			min = getUSDistance(sonar);
+ 			min_rotation = getMotorEncoder(mL);
+ 		}
+ 	}
+ 	// Check to see if we found the tower, or if we need to drive and retry.
+ 	if (min > 80) {
+ 		drive(5, 30);
+ 		findTower();
+ 		return;
+ 	}
+
+ 	while (getMotorEncoder(mL) >= min_rotation) {
+ 	  motor[mL] = -10;
+ 	  motor[mR] = 10;
+	}
+ 	// We are now facing the closest object so stop both motors
+ 	setSpeed(0);
+}
+
+/*
+Drives the remaining distance to the tower, pushes it off the black and then
+drives a set distance.
+*/
+void pushTower() {
+	bool pushedOff = false;
+	while(pushedOff == false) {
+		// Drive towards the tower
+		setSpeed(10);
+
+		// Detect that we are close and speed up for a certain amount of time
+		if ((getUSDistance(sonar) < 7) && isBlack()) {
+				drive(2, 40);
+				pushedOff = true;
+		}
+	}
+
+	playSound(soundUpwardTones);
+	setSpeed(0);
+	wait1Msec(1000); //let sound play
+}
+
+task main() {
+	// Let the robot get it's sh*t together
+	wait1Msec(1000);
+	/*
+	// Drive from the start block, onto the row of tiles, then turn right.
+	findRow();
+	// Drive along the row of tiles, use pathing and count to 15.
+	driveRow();
+	// Make a right turn, drive towards the tower.
+	*/
+	moveCloser();
+	// Find the tower and face it.
+	findTower();
+	// Push the tower off of the black block, then stop.
+	pushTower();
+
+}
+/*
+Finds the closest object through it, using sonar and faces towards it.
+
 void findTower() {
 	float min = 255;
 
@@ -212,57 +262,49 @@ void findTower() {
 
 	// Check to see if we found the tower, or if we need to drive and retry.
 	if (min > 100) {
-		setLEDColor(ledRedFlash);
 		drive(5, 30);
 		findTower();
 		return;
 	}
-
+/*
 	// Spin the robot to where the sonar recored the closest object
 	current = getMotorEncoder(mL);
 	while ((getUSDistance(sonar) > (min + 1)) && getMotorEncoder(mL) <= current + SPIN) {
 		motor[mL] = 20;
 		motor[mR] = -20;
 	}
+*/
+	/*
 
+  int start = 0;
+	int end = 0;
+
+	motor[mL] = 10;
+	motor[mR] = -10;
+
+	current = getMotorEncoder(mL);
+	//find the start of the object
+	while (getUSDistance(sonar) > MIN_RANGE * min || getMotorEncoder(mL) <= current + (SPIN/2)) {
+	}
+	//setLEDColor(ledRedFlash);
+	start = getMotorEncoder(mL);
+
+
+	//find the end of the object
+	while (getUSDistance(sonar) < MIN_RANGE * min ) {
+	}
+	end = getMotorEncoder(mL);
+	//setLEDColor(ledRed);
+
+	setSpeed(0);
+
+	//turn to the centre of the object
+	current = getMotorEncoder(mR);
+	while(getMotorEncoder(mR) < current + (end-start)/2){
+		motor[mR] = 5;
+		motor[mL] = -5;
+	}
 	// We are now facing the closest object so stop both motors
 	setSpeed(0);
 }
-
-/*
-Drives the remaining distance to the tower, pushes it off the black and then
-drives a set distance.
 */
-void pushTower() {
-	bool pushedOff = false;
-	while(pushedOff == false) {
-		// Drive towards the tower
-		setSpeed(20);
-
-		// Detect that we are close and speed up for a certain amount of time
-		if ((getUSDistance(sonar) < 7) && isBlack()) {
-				drive(2, 40);
-				pushedOff = true;
-		}
-	}
-
-	playSound(soundUpwardTones);
-	setSpeed(0);
-	wait1Msec(1000);
-}
-
-task main() {
-	// Let the robot get it's sh*t together
-	wait1Msec(1000);
-	// Drive from the start block, onto the row of tiles, then turn right.
-	findRow();
-	// Drive along the row of tiles, use pathing and count to 15.
-	driveRow();
-	// Make a right turn, drive towards the tower.
-	moveCloser();
-	// Find the tower and face it.
-	findTower();
-	// Push the tower off of the black block, then stop.
-	pushTower();
-
-}
