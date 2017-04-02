@@ -231,19 +231,24 @@ void findTowerOne() {
 	int current = getMotorEncoder(mL);
 	int count = 0;
 	int turn_count = 0;
+	int spinCurrent;
+	int spinAmount = 46; // 15 spins
 
 	// Do a full 360 spin
 	while(getMotorEncoder(mL) <= current + SPIN) {
 
 		// Spin and hold
-		spin(20, 0);
-		wait1Msec(1500);
+		spinCurrent = getMotorEncoder(mL);
+		while(getMotorEncoder(mL) < spinCurrent + spinAmount) {
+			spin(20, 0);
+		}
 		setSpeed(0);
+		wait1Msec(1500);
 
 		// Check to see if we now have a new smaller rotation
 		if(getUSDistance(sonar) < min) {
 			min = getUSDistance(sonar);
-			turn_count = count;
+			turn_count = count * spinAmount;
 		}
 
 		// Increment the counter so we know how far to turn
@@ -258,14 +263,10 @@ void findTowerOne() {
 	}
 
 	// Turn back to our min sonar range
-	count = 0;
-	while (count <= turn_count) {
+	current = getMotorEncoder(mL);
+	while (getMotorEncoder(mL) < current + turn_count) {
 		// Do same spinning and holding
 		spin(20, 0);
-		wait1Msec(1500);
-		setSpeed(0);
-
-		count++;
 	}
 }
 
