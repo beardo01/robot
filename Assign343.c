@@ -87,7 +87,7 @@ Spins the robot, on the point, in a certain direction at a certain speed.
 	1 = counter clockwise
 */
 void spin(int speed, int dir) {
-	if(dir) {
+	if(dir == 0) {
 		motor[mL] = speed;
 		motor[mR] = speed - (speed * 2);
 	} else {
