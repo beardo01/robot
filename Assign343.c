@@ -234,10 +234,10 @@ void findTowerOne() {
 
 	// Do a full 360 spin
 	while(getMotorEncoder(mL) <= current + SPIN) {
-		
+
 		// Spin and hold
-		turn(20, 0);
-		wait1Msec(500);
+		spin(20, 0);
+		wait1Msec(1500);
 		setSpeed(0);
 
 		// Check to see if we now have a new smaller rotation
@@ -251,7 +251,7 @@ void findTowerOne() {
 	}
 
 	// Check to see if we got an acceptable min
-	if(min < 80) {
+	if(min > 80) {
 		drive(2, 20);
 		findTowerOne();
 		return;
@@ -261,8 +261,8 @@ void findTowerOne() {
 	count = 0;
 	while (count <= turn_count) {
 		// Do same spinning and holding
-		turn(20, 0);
-		wait1Msec(500);
+		spin(20, 0);
+		wait1Msec(1500);
 		setSpeed(0);
 
 		count++;
@@ -300,12 +300,11 @@ task main() {
 	// Drive along the row of tiles, use pathing and count to 15.
 	driveRow();
 	// Make a right turn, drive towards the tower.
-	*/
-	moveCloser();
+	moveCloser(); */
 	// Find the tower and face it.
-	findTower();
+	findTowerOne();
 	// Push the tower off of the black block, then stop.
-	pushTower();
+	//pushTower();
 
 }
 /*
