@@ -94,7 +94,6 @@ void spin(int speed, int dir) {
 		motor[mL] = speed - (speed * 2);
 		motor[mR] = speed;
 	}
-	setSpeed(0);
 }
 
 /*
@@ -117,7 +116,7 @@ void findRow() {
 
 		// Detect that we have hit a black tile, do a right turn and break.
 		if (getColorReflected(lightSensor) <= BLACK_UPPER && white == 1) {
-			playSound(soundBeepBeep);
+			playSound(soundBlip);
 			turn(1, 1, 20); // 90 degree left turn
 			findingRow = false;
 		}
@@ -198,7 +197,7 @@ void moveCloser() {
  	// Set current to the value of the Motor Encoder
  	int current = getMotorEncoder(mL);
  	// Do a 360 degree turn
- 	while (getMotorEncoder(mL) <= current + SPIN) {
+ 	while (getMotorEncoder(mL) <= current + SPIN) { //SPIN = 690
  		motor[mL] = 10;
  		motor[mR] = -10;
  		// While turning, find the closest thing and record the distance to it
@@ -236,13 +235,16 @@ void findTowerOne() {
 	// Do a full 360 spin
 	while(getMotorEncoder(mL) <= current + SPIN) {
 		spin(20, 0);
-		wait1Msec(500);
+		wait1Msec(200);
+		setSpeed(0);
 
 		// Check to see if we now have a new smaller rotation
 		if(getUSDistance(sonar) < min) {
 			min = getUSDistance(sonar);
-			spinAmount = getMotorEncoder(mL) - current;
+			spinAmount = count + 1;
 		}
+
+		wait1Msec(500);
 
 		// Increment the counter so we know how far to turn
 		count++;
@@ -256,9 +258,13 @@ void findTowerOne() {
 	}
 
 	// Turn back to our min sonar range
-	current = getMotorEncoder(mL);
-	while (getMotorEncoder(mL) < current + spinAmount) {
+	count = 0;
+	while (count <= spinAmount) {
 		spin(20, 0);
+		wait1Msec(200);
+		setSpeed(0);
+		wait1Msec(500);
+		count++;
 	}
 }
 
@@ -287,17 +293,18 @@ void pushTower() {
 task main() {
 	// Let the robot get it's sh*t together
 	wait1Msec(1000);
-	/*
 	// Drive from the start block, onto the row of tiles, then turn right.
 	findRow();
 	// Drive along the row of tiles, use pathing and count to 15.
 	driveRow();
 	// Make a right turn, drive towards the tower.
-	moveCloser(); */
+	moveCloser();
 	// Find the tower and face it.
+	displayTextLine(6, "findtower");
 	findTowerOne();
 	// Push the tower off of the black block, then stop.
-	//pushTower();
+	displayTextLine(6, "pushTower");
+	pushTower();
 
 }
 /*
