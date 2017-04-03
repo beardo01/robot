@@ -291,7 +291,7 @@ void findTowerTwo() {
 		setSpeed(0);
 
 		// Set detected to true as soon as we sense the tower
-		if(getUsDistance(sonar) < 100) {
+		if(getUSDistance(sonar) < 100) {
 			detected = true;
 		}
 
@@ -302,7 +302,7 @@ void findTowerTwo() {
 		}
 
 		// We've gone past the tower
-		if(getUsDistance(sonar) > 100 && detected) {
+		if(getUSDistance(sonar) > 100 && detected) {
 			ended = true;
 		}
 
@@ -318,6 +318,7 @@ void findTowerTwo() {
 		wait1Msec(200);
 		setSpeed(0);
 		wait1Msec(500);
+		turns++;
 	}
 }
 
@@ -345,6 +346,7 @@ void pushTower() {
 }
 
 task main() {
+	/*
 	// Let the robot get it's sh*t together
 	wait1Msec(1000);
 	// Drive from the start block, onto the row of tiles, then turn right.
@@ -353,9 +355,9 @@ task main() {
 	driveRow();
 	// Make a right turn, drive towards the tower.
 	moveCloser();
-	// Find the tower and face it.
-	displayTextLine(6, "findtower");
-	findTowerOne();
+	// Find the tower and face it. */
+	displayTextLine(6, "findTowerTwo");
+	findTowerTwo();
 	// Push the tower off of the black block, then stop.
 	displayTextLine(6, "pushTower");
 	pushTower();
