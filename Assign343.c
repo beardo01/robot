@@ -281,13 +281,23 @@ void findTowerTwo() {
 	int current = getMotorEncoder(mL);
 	int turns = 0;
 	int minTurns = 0;
-	bool detected;
+	bool detected = false;
 	bool ended = false;
 	int diff;
+	int spinSpeed = 10;
+	int spinWait = 100;
+
+	while(getUSDistance(sonar) < 100) {
+	  spin(spinSpeed, 1);
+		wait1Msec(spinWait);
+		setSpeed(0);
+		wait1Msec(500);
+
+  }
 
 	while(getMotorEncoder(mL) < current + SPIN && !ended) {
-		spin(20, 0);
-		wait1Msec(200);
+		spin(spinSpeed, 0);
+		wait1Msec(spinWait);
 		setSpeed(0);
 
 		// Set detected to true as soon as we sense the tower
@@ -314,8 +324,8 @@ void findTowerTwo() {
 	diff = (turns - 1) - minTurns;
 	turns = 0;
 	while(turns < diff) {
-		spin(20, 1);
-		wait1Msec(200);
+		spin(spinSpeed, 1);
+		wait1Msec(spinWait);
 		setSpeed(0);
 		wait1Msec(500);
 		turns++;
@@ -326,6 +336,9 @@ void findTowerTwo() {
 /*
 Drives the remaining distance to the tower, pushes it off the black and then
 drives a set distance.
+
+add bumper or conditonal
+make sure our sensor value is good
 */
 void pushTower() {
 	bool pushedOff = false;
