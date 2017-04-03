@@ -269,6 +269,60 @@ void findTowerOne() {
 }
 
 /*
+Find tower alternative.
+
+If we make some assumptions about the fact that we generally expect the tower to
+be in front of us, then we can say that we should only really scan the area,
+immediately in front of us and then do an opposite turn to get back towards
+facing the tower.
+*/
+void findTowerTwo() {
+	float min = 100;
+	int current = getMotorEncoder(mL);
+	int turns = 0;
+	int minTurns = 0;
+	bool detected;
+	bool ended = false;
+	int diff;
+
+	while(getMotorEncoder(mL) < current + SPIN && !ended) {
+		spin(20, 0);
+		wait1Msec(200);
+		setSpeed(0);
+
+		// Set detected to true as soon as we sense the tower
+		if(getUsDistance(sonar) < 100) {
+			detected = true;
+		}
+
+		// Check to see if we have a new smaller rotation
+		if(getUSDistance(sonar) < min) {
+			min = getUSDistance(sonar);
+			minTurns = turns;
+		}
+
+		// We've gone past the tower
+		if(getUsDistance(sonar) > 100 && detected) {
+			ended = true;
+		}
+
+		wait1Msec(500);
+
+		turns++;
+	}
+
+	diff = (turns - 1) - minTurns;
+	turns = 0;
+	while(turns < diff) {
+		spin(20, 1);
+		wait1Msec(200);
+		setSpeed(0);
+		wait1Msec(500);
+	}
+}
+
+
+/*
 Drives the remaining distance to the tower, pushes it off the black and then
 drives a set distance.
 */
