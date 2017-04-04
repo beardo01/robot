@@ -21,7 +21,7 @@ the assignment.
 #define SPIN 690
 #define QUARTER_TURN 350
 #define WHEEL_ROTATION 200
-#define SQUARE_CENTRE 190 // wheel rotation from center of tile to edge of tile
+#define SQUARE_CENTRE 190 // Wheel rotation from center of tile to edge of tile
 #define SQUARE_BIAS 0.75
 #define MIN_RANGE 1.1
 
@@ -53,7 +53,7 @@ Turns the robot by activating a servo motor and stopping the opposite motor
 @param rotations = how many 90 degree turns to do
 @param speed = the speed to set the chosen servo motor to.
 */
-void turn(int m, int rotations, int speed) {
+void turn(int m, float rotations, int speed) {
 	setSpeed(0);
 	if (m) {
 		moveMotorTarget(mL, rotations * QUARTER_TURN, speed);
@@ -98,7 +98,7 @@ void spin(int speed, int dir) {
 
 /*
 Starts on the black starting square, drives forward then detects and turn on
-the first black tile.
+the first black tile that it reaches.
 */
 void findRow() {
 	int white = 0;
@@ -107,6 +107,7 @@ void findRow() {
 	// Start driving
 	setSpeed(10);
 
+	// Drive forward until we have found the black tile, then turn
 	while(findingRow) {
 
 		// Detect that we have hit a light tile and update white
@@ -114,10 +115,12 @@ void findRow() {
 			white = 1;
 		}
 
-		// Detect that we have hit a black tile, do a right turn and break.
+		// Detect that we have hit a black tile, do a right turn and break
 		if (getColorReflected(lightSensor) <= BLACK_UPPER && white == 1) {
 			playSound(soundBlip);
-			turn(1, 1, 20); // 90 degree left turn
+
+			// Perform a 90 degree left turn then break from the while loop
+			turn(1, 1, 20);
 			findingRow = false;
 		}
 	}
@@ -137,15 +140,15 @@ void driveRow() {
 	// Start driving
 	setSpeed(40);
 
-	// Drive and count black tiles until we have counted 15.
+	// Drive and count black tiles until we have counted 15
 	while(count < 15) {
 
-		// Detect a light tile and set light flag.
+		// Detect a light tile and set light flag
 		if (getColorReflected(lightSensor) >= LIGHT_TILE) {
 			lightTile = 1;
 		}
 
-		// Detect a black tile and act accordingly.
+		// Detect a black tile and act accordingly
 		if (getColorReflected(lightSensor) <= BLACK_UPPER && lightTile == 1) {
 			playSound(soundBlip);
 			count++;
@@ -154,13 +157,13 @@ void driveRow() {
 			lightTile = 0;
 			drive(0.4, 15);
 			int distance = getMotorEncoder(mL);
-			//wait untill we hit an edge
+			// Wait untill we hit an edge
 			while(isBlack()){
 				motor[mL] = 15;
 			}
 			setSpeed(0);
 
-			//After hiting the edge turn the robot until we are in the centre of a square
+			// After hiting the edge turn the robot until we are in the centre of a square
 			int current = getMotorEncoder(mL);
 			distance = current - distance;
 			while(getMotorEncoder(mL) >= current - ( distance * SQUARE_BIAS + SQUARE_CENTRE*(1-SQUARE_BIAS))) {
@@ -179,72 +182,98 @@ Makes a right turn and moves three quarters of the way to the tower.
 */
 void moveCloser() {
 	// Make a right hand turn
-	turn(1, 1, 20);
+	turn(1, 1.01, 20);
 
 	// Drive towards the tower
-	moveMotorTarget(mL, 4500, 40);
-	moveMotorTarget(mR, 4500, 40);
+	moveMotorTarget(mL, 4000, 40);
+	moveMotorTarget(mR, 4000, 40);
 	waitUntilMotorStop(mL);
 	waitUntilMotorStop(mR);
 }
 
 /*
- Finds the closest object through it, using sonar and faces towards it.
+Finds the closest object to it and then aligns to the center of the object. It
+does this by measuring the distance at the left hand side of the object,
+and at the right hand side of the object and then finding the mid point. The
+function will drive closer to the object and then call itself if after it has 
+aligned to tower if it detects that the object is too far away. This means that
+as we get closer we should get a more accurate reading.
 */
  void findTower() {
- 	float min = 255;
- 	// Set current to the value of the Motor Encoder
- 	int current = getMotorEncoder(mL);
- 	// Do a 90degree left turn
- 	while (getMotorEncoder(mL) >= current - SPIN / 4) {
- 		spin(20, 1);
-  }
-  current = getMotorEncoder(mL);
- 	while (getMotorEncoder(mL) <= current + SPIN/2) { //SPIN = 690         = 180degree spin
- 		motor[mL] = 10;
- 		motor[mR] = -10;
- 		// While turning, find the closest thing and record the distance to it
- 		if (getUSDistance(sonar) < min) {
- 			min = getUSDistance(sonar);
- 		}
- 	}
+	 // Declare a starting min value, so we can find the closest part of the object
+	float min = 255;
 
- 	// Check to see if we found the tower, or if we need to drive and retry.
- 	if (min > 100) {
- 		drive(5, 30);
- 		findTower();
- 		return;
- 	}
-
- 	int start_rot = 0;
-	int end = 0;
-  current = getMotorEncoder(mL);
-
-	motor[mL] = -10;
-	motor[mR] = 10;
-	//find the start of the object
-	while (getUSDistance(sonar) > MIN_RANGE * min) {
+	// Set current to the value of the motor encoder and do a left turn
+	int current = getMotorEncoder(mL);
+	while (getMotorEncoder(mL) >= current - SPIN / 4) {
+		spin(20, 1);
 	}
-	//setLEDColor(ledRedFlash);
+
+	// Set current ot the value of the motor encoder and do a right turn
+	current = getMotorEncoder(mL);
+	while (getMotorEncoder(mL) <= current + SPIN / 2) {
+		motor[mL] = 8;
+		motor[mR] = -8;
+
+		// While turning, find the closest thing and record the distance to it
+		if (getUSDistance(sonar) < min) {
+			min = getUSDistance(sonar);
+		}
+	}
+
+	// We know have the minimum distance of the tower that we want to drive towards
+	int start_rot = 0;
+	int end_rot = 0;
+	current = getMotorEncoder(mL);
+
+	/*motor[mL] = -5;
+	motor[mR] = 5;
+	//find the start of the object while turning
+	while (getUSDistance(sonar) > MIN_RANGE * min) {
+	}*/
+
+	// Turn back to the start of the object
+	while (getUSDistance(sonar) > MIN_RANGE * min) {
+		spin(5, 1);
+	}
 	start_rot = getMotorEncoder(mL);
 
-
-	//find the end of the object
-	while (getUSDistance(sonar) < MIN_RANGE * min ) {
+	/*
+	//find the end of the object while turning
+	while (getUSDistance(sonar) < MIN_RANGE * min)
+	{
 	}
 	end = getMotorEncoder(mL);
-	//setLEDColor(ledRed);
+	*/
 
+	// Turn back to the end of the object
+	while(getUSDistance(sonar) < MIN_RANGE * min) {
+		spin(5, 1);
+	}
+	end_rot = getMotorEncoder(mL);
+
+	// Stop the motors
 	setSpeed(0);
 
-	//turn to the centre of the object
+	// Turn back to the centre of the object
 	current = getMotorEncoder(mL);
-	while(getMotorEncoder(mL) < current + (start_rot-end)/2){
-		motor[mR] = -5;
-		motor[mL] = 5;
+	while (getMotorEncoder(mL) < current + (start_rot - end_rot) / 2)
+	{
+		/*motor[mR] = -5;
+		motor[mL] = 5;*/
+		spin(5, 0);
 	}
+
 	// We are now facing the closest object so stop both motors
 	setSpeed(0);
+
+	// Check to see if we found the tower, or if we need to drive and retry.
+	if (min > 45)
+	{
+		drive(3, 30);
+		findTower();
+		return;
+	}
 }
 
 /*
@@ -258,22 +287,27 @@ void pushTower() {
 	bool pushedOff = false;
 	while(pushedOff == false) {
 		// Drive towards the tower
-		setSpeed(10);
+		setSpeed(20);
 
 		// Detect that we are close and speed up for a certain amount of time
-		if ((getUSDistance(sonar) < 7) && isBlack() || getTouchValue(touch) == 1){
-				drive(2, 40);
+		if ((getUSDistance(sonar) < 7) && isBlack() || getTouchValue(touch) == 1) {
+				drive(3, 40);
 				pushedOff = true;
 		}
 	}
 
+	// We are done - yay!
 	playSound(soundUpwardTones);
 	setSpeed(0);
-	wait1Msec(1000); //let sound play
+	wait1Msec(1000);
 }
 
+/*
+Main task for the program. This task makes calls to all of the other parts of
+the program and as the overall controller.
+*/
 task main() {
-	// Let the robot get it's sh*t together
+	// Let the robot initialize
 	wait1Msec(1000);
 	// Drive from the start block, onto the row of tiles, then turn right.
 	findRow();
@@ -282,76 +316,7 @@ task main() {
 	// Make a right turn, drive towards the tower.
 	moveCloser();
 	// Find the tower and face it.
-	displayTextLine(6, "findTower");
 	findTower();
 	// Push the tower off of the black block, then stop.
-	displayTextLine(6, "pushTower");
 	pushTower();
-
 }
-/*
-Finds the closest object through it, using sonar and faces towards it.
-
-void findTower() {
-	float min = 255;
-
-	// Set current to the value of the Motor Encoder
-	int current = getMotorEncoder(mL);
-	// Do a 360 degree turn
-	while (getMotorEncoder(mL) <= current + SPIN) {
-		motor[mL] = 20;
-		motor[mR] = -20;
-		// While turning, find the closest thing and record the distance to it
-		if (getUSDistance(sonar) < min) {
-			min = getUSDistance(sonar);
-		}
-	}
-
-	// Check to see if we found the tower, or if we need to drive and retry.
-	if (min > 100) {
-		drive(5, 30);
-		findTower();
-		return;
-	}
-/*
-	// Spin the robot to where the sonar recored the closest object
-	current = getMotorEncoder(mL);
-	while ((getUSDistance(sonar) > (min + 1)) && getMotorEncoder(mL) <= current + SPIN) {
-		motor[mL] = 20;
-		motor[mR] = -20;
-	}
-*/
-	/*
-
-  int start = 0;
-	int end = 0;
-
-	motor[mL] = 10;
-	motor[mR] = -10;
-
-	current = getMotorEncoder(mL);
-	//find the start of the object
-	while (getUSDistance(sonar) > MIN_RANGE * min || getMotorEncoder(mL) <= current + (SPIN/2)) {
-	}
-	//setLEDColor(ledRedFlash);
-	start = getMotorEncoder(mL);
-
-
-	//find the end of the object
-	while (getUSDistance(sonar) < MIN_RANGE * min ) {
-	}
-	end = getMotorEncoder(mL);
-	//setLEDColor(ledRed);
-
-	setSpeed(0);
-
-	//turn to the centre of the object
-	current = getMotorEncoder(mR);
-	while(getMotorEncoder(mR) < current + (end-start)/2){
-		motor[mR] = 5;
-		motor[mL] = -5;
-	}
-	// We are now facing the closest object so stop both motors
-	setSpeed(0);
-}
-*/
