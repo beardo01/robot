@@ -226,25 +226,11 @@ as we get closer we should get a more accurate reading.
 	int end_rot = 0;
 	current = getMotorEncoder(mL);
 
-	/*motor[mL] = -5;
-	motor[mR] = 5;
-	//find the start of the object while turning
-	while (getUSDistance(sonar) > MIN_RANGE * min) {
-	}*/
-
 	// Turn back to the start of the object
 	while (getUSDistance(sonar) > MIN_RANGE * min) {
 		spin(5, 1);
 	}
 	start_rot = getMotorEncoder(mL);
-
-	/*
-	//find the end of the object while turning
-	while (getUSDistance(sonar) < MIN_RANGE * min)
-	{
-	}
-	end = getMotorEncoder(mL);
-	*/
 
 	// Turn back to the end of the object
 	while(getUSDistance(sonar) < MIN_RANGE * min) {
@@ -259,8 +245,6 @@ as we get closer we should get a more accurate reading.
 	current = getMotorEncoder(mL);
 	while (getMotorEncoder(mL) < current + (start_rot - end_rot) / 2)
 	{
-		/*motor[mR] = -5;
-		motor[mL] = 5;*/
 		spin(5, 0);
 	}
 
@@ -279,9 +263,6 @@ as we get closer we should get a more accurate reading.
 /*
 Drives the remaining distance to the tower, pushes it off the black and then
 drives a set distance.
-
-add bumper or conditonal
-make sure our sensor value is good
 */
 void pushTower() {
 	bool pushedOff = false;
