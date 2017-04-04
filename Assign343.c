@@ -21,7 +21,7 @@ the assignment.
 #define SPIN 690
 #define QUARTER_TURN 350
 #define WHEEL_ROTATION 200
-#define SQUARE_CENTRE 180 // wheel rotation from center of tile to edge of tile
+#define SQUARE_CENTRE 190 // wheel rotation from center of tile to edge of tile
 #define SQUARE_BIAS 0.75
 #define MIN_RANGE 1.3
 
@@ -152,11 +152,11 @@ void driveRow() {
 
 			// Reset our lightTile flag.
 			lightTile = 0;
-			drive(0.4, 20);
+			drive(0.4, 15);
 			int distance = getMotorEncoder(mL);
 			//wait untill we hit an edge
 			while(isBlack()){
-				motor[mL] = 20;
+				motor[mL] = 15;
 			}
 			setSpeed(0);
 
@@ -164,7 +164,7 @@ void driveRow() {
 			int current = getMotorEncoder(mL);
 			distance = current - distance;
 			while(getMotorEncoder(mL) >= current - ( distance * SQUARE_BIAS + SQUARE_CENTRE*(1-SQUARE_BIAS))) {
-				motor[mL] = -20;
+				motor[mL] = -15;
 			}
 			setSpeed(40);
 		}
@@ -182,8 +182,8 @@ void moveCloser() {
 	turn(1, 1, 20);
 
 	// Drive towards the tower
-	moveMotorTarget(mL, 4250, 40);
-	moveMotorTarget(mR, 4250, 40);
+	moveMotorTarget(mL, 4500, 40);
+	moveMotorTarget(mR, 4500, 40);
 	waitUntilMotorStop(mL);
 	waitUntilMotorStop(mR);
 }
@@ -196,8 +196,12 @@ void moveCloser() {
 	int min_rotation = 0;
  	// Set current to the value of the Motor Encoder
  	int current = getMotorEncoder(mL);
- 	// Do a 360 degree turn
- 	while (getMotorEncoder(mL) <= current + SPIN) { //SPIN = 690
+ 	// Do a 90degree left turn
+ 	while (getMotorEncoder(mL) >= current - SPIN / 4) {
+ 	spin(20, 1);
+  }
+  current = getMotorEncoder(mL);
+ 	while (getMotorEncoder(mL) <= current + SPIN/2) { //SPIN = 690         = 180degree spin
  		motor[mL] = 10;
  		motor[mR] = -10;
  		// While turning, find the closest thing and record the distance to it
@@ -207,7 +211,7 @@ void moveCloser() {
  		}
  	}
  	// Check to see if we found the tower, or if we need to drive and retry.
- 	if (min > 80) {
+ 	if (min > 100) {
  		drive(5, 30);
  		findTower();
  		return;
@@ -220,118 +224,6 @@ void moveCloser() {
  	// We are now facing the closest object so stop both motors
  	setSpeed(0);
 }
-
-/*
-Find tower alternative.
-*/
-void findTowerOne() {
-	float min = 100;
-
-	// Get the current encoder
-	int current = getMotorEncoder(mL);
-	int count = 0;
-	int spinAmount = 0;
-
-	// Do a full 360 spin
-	while(getMotorEncoder(mL) <= current + SPIN) {
-		spin(20, 0);
-		wait1Msec(200);
-		setSpeed(0);
-
-		// Check to see if we now have a new smaller rotation
-		if(getUSDistance(sonar) < min) {
-			min = getUSDistance(sonar);
-			spinAmount = count + 1;
-		}
-
-		wait1Msec(500);
-
-		// Increment the counter so we know how far to turn
-		count++;
-	}
-
-	// Check to see if we got an acceptable min
-	if(min > 80) {
-		drive(2, 20);
-		findTowerOne();
-		return;
-	}
-
-	// Turn back to our min sonar range
-	count = 0;
-	while (count <= spinAmount) {
-		spin(20, 0);
-		wait1Msec(200);
-		setSpeed(0);
-		wait1Msec(500);
-		count++;
-	}
-}
-
-/*
-Find tower alternative.
-
-If we make some assumptions about the fact that we generally expect the tower to
-be in front of us, then we can say that we should only really scan the area,
-immediately in front of us and then do an opposite turn to get back towards
-facing the tower.
-*/
-void findTowerTwo() {
-	float min = 100;
-	int current = getMotorEncoder(mL);
-	int turns = 0;
-	int minTurns = 0;
-	bool detected = false;
-	bool ended = false;
-	int diff;
-	int spinSpeed = 10;
-	int spinWait = 100;
-
-	while(getUSDistance(sonar) < 100) {
-	  spin(spinSpeed, 1);
-		wait1Msec(spinWait);
-		setSpeed(0);
-		wait1Msec(500);
-
-  }
-
-	while(getMotorEncoder(mL) < current + SPIN && !ended) {
-		spin(spinSpeed, 0);
-		wait1Msec(spinWait);
-		setSpeed(0);
-
-		// Set detected to true as soon as we sense the tower
-		if(getUSDistance(sonar) < 100) {
-			detected = true;
-		}
-
-		// Check to see if we have a new smaller rotation
-		if(getUSDistance(sonar) < min) {
-			min = getUSDistance(sonar);
-			minTurns = turns;
-		}
-
-		// We've gone past the tower
-		if(getUSDistance(sonar) > 100 && detected) {
-			ended = true;
-		}
-
-		wait1Msec(500);
-
-		turns++;
-	}
-
-	diff = (turns - 1) - minTurns;
-	turns = 0;
-	while(turns < diff) {
-		spin(spinSpeed, 1);
-		wait1Msec(spinWait);
-		setSpeed(0);
-		wait1Msec(500);
-		turns++;
-	}
-}
-
 
 /*
 Drives the remaining distance to the tower, pushes it off the black and then
@@ -347,7 +239,7 @@ void pushTower() {
 		setSpeed(10);
 
 		// Detect that we are close and speed up for a certain amount of time
-		if ((getUSDistance(sonar) < 7) && isBlack()) {
+		if ((getUSDistance(sonar) < 7) && isBlack() || getTouchValue(touch) == 1){
 				drive(2, 40);
 				pushedOff = true;
 		}
@@ -359,7 +251,6 @@ void pushTower() {
 }
 
 task main() {
-	/*
 	// Let the robot get it's sh*t together
 	wait1Msec(1000);
 	// Drive from the start block, onto the row of tiles, then turn right.
@@ -368,9 +259,9 @@ task main() {
 	driveRow();
 	// Make a right turn, drive towards the tower.
 	moveCloser();
-	// Find the tower and face it. */
-	displayTextLine(6, "findTowerTwo");
-	findTowerTwo();
+	// Find the tower and face it.
+	displayTextLine(6, "findTower");
+	findTower();
 	// Push the tower off of the black block, then stop.
 	displayTextLine(6, "pushTower");
 	pushTower();
