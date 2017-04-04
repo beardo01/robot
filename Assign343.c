@@ -23,7 +23,7 @@ the assignment.
 #define WHEEL_ROTATION 200
 #define SQUARE_CENTRE 190 // wheel rotation from center of tile to edge of tile
 #define SQUARE_BIAS 0.75
-#define MIN_RANGE 1.3
+#define MIN_RANGE 1.1
 
 /*
 Checks if the sensor currently senses black or not.
@@ -193,12 +193,11 @@ void moveCloser() {
 */
  void findTower() {
  	float min = 255;
-	int min_rotation = 0;
  	// Set current to the value of the Motor Encoder
  	int current = getMotorEncoder(mL);
  	// Do a 90degree left turn
  	while (getMotorEncoder(mL) >= current - SPIN / 4) {
- 	spin(20, 1);
+ 		spin(20, 1);
   }
   current = getMotorEncoder(mL);
  	while (getMotorEncoder(mL) <= current + SPIN/2) { //SPIN = 690         = 180degree spin
@@ -207,9 +206,9 @@ void moveCloser() {
  		// While turning, find the closest thing and record the distance to it
  		if (getUSDistance(sonar) < min) {
  			min = getUSDistance(sonar);
- 			min_rotation = getMotorEncoder(mL);
  		}
  	}
+
  	// Check to see if we found the tower, or if we need to drive and retry.
  	if (min > 100) {
  		drive(5, 30);
@@ -217,12 +216,35 @@ void moveCloser() {
  		return;
  	}
 
- 	while (getMotorEncoder(mL) >= min_rotation) {
- 	  motor[mL] = -10;
- 	  motor[mR] = 10;
+ 	int start_rot = 0;
+	int end = 0;
+  current = getMotorEncoder(mL);
+
+	motor[mL] = -10;
+	motor[mR] = 10;
+	//find the start of the object
+	while (getUSDistance(sonar) > MIN_RANGE * min) {
 	}
- 	// We are now facing the closest object so stop both motors
- 	setSpeed(0);
+	//setLEDColor(ledRedFlash);
+	start_rot = getMotorEncoder(mL);
+
+
+	//find the end of the object
+	while (getUSDistance(sonar) < MIN_RANGE * min ) {
+	}
+	end = getMotorEncoder(mL);
+	//setLEDColor(ledRed);
+
+	setSpeed(0);
+
+	//turn to the centre of the object
+	current = getMotorEncoder(mL);
+	while(getMotorEncoder(mL) < current + (start_rot-end)/2){
+		motor[mR] = -5;
+		motor[mL] = 5;
+	}
+	// We are now facing the closest object so stop both motors
+	setSpeed(0);
 }
 
 /*
